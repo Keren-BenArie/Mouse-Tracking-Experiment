@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="jspsych-6.0.5/jspsych.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-html-keyboard-response.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-image-keyboard-response.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-send-data.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-survey-text.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-instructions.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-call-function.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-survey-multi-choice.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-survey-multi-choice-text.js"></script>
+  <script src="jspsych-6.0.5/plugins/jspsych-html-button-response.js"></script>
+
+  <link rel="stylesheet" href="jspsych-6.0.5/css/jspsych.css"></link>
+  <style>
+    img {
+      width: 768px;
+      max-width: 100%;
+      height: auto;
+      object-fit: scale-down;
+    }
+  </style>
+
+</head>
+<body></body>
+<script>
+  const FAST_MODE = true;
+  const POS_CHARS = ['joy', 'kiss', 'family', 'laughter', 'sunrise'];
+  const NEG_CHARS = ['war', 'cancer', 'funeral', 'suicide', 'slaughter'];
+  const POSITIVE_IMAGES = jsPsych.randomization.shuffle(['5833', '8190', '2347', '5910', '8170', '8499', '2209', '8470', '7502', '2216']
+  );
+  const NEGATIVE_IMAGES = jsPsych.randomization.shuffle(['3100', '9075', '3350', '2703', '9571', '9800', '9300', '9006','9600', '3220']
+  );
+  const IMG_SUFF = '.jpg';
+  const IMG_PREF = 'stim/';
+
+  function pair(arr) {
+    pairs = [];
+    for (i=0;i<arr.length;i++) {
+      for(j=i+1;j<arr.length;j++) {
+        pairs.push([arr[i],arr[j]])
+      }
+    }
+    return pairs;
+  }
+
+  const PRACTICE_NEG_CHARS = ['murderer', 'tumor', 'lice','poison']; 
+  const PRACTICE_POS_CHARS =  ['paradise', 'romantic', 'love','vacation'];
+  const POS_PRACTICE_IMAGES = jsPsych.randomization.shuffle(['8496','7270']); 
+  const NEG_PRACTICE_IMAGES = jsPsych.randomization.shuffle(['9423','9429']);
+
+	function isConflictAppExp(img){
+		if (POSITIVE_DECISIONS.includes(img)){return "Approach";}
+		else{return "Avoidance";}
+	}
+	
+		function isConflictAppPractice(img){
+		if (PRACTICE_POS_DECISIONS.includes(img)){return "Approach";}
+		else{return "Avoidance";}
+	}
+	
+	function isImgPosExp(img){
+		if(POSITIVE_IMAGES.includes(img)){return "Positive";}
+		else{return "Negative";}
+	}
+	
+		function isImgPosPractice(img){
+		if(POS_PRACTICE_IMAGES.includes(img)){return "Positive";}
+		else{return "Negative";}
+	}
+	
+	
+	// build experimental trials
+    var POSITIVE_DECISIONS;
+    var NEGATIVE_DECISIONS;
+    
+    NEGATIVE_DECISIONS = jsPsych.randomization.shuffle(pair(NEG_CHARS));
+    POSITIVE_DECISIONS = jsPsych.randomization.shuffle(pair(POS_CHARS));
+	
+	//should be 21 of each kind: positive approach, negative approach, positive avoidance, negative avoidance
+    var IMAGES = [];
+    var DECISIONS = [];
+    var app = [];
+    var avo = [];
+    IMAGES.push(jsPsych.randomization.repeat(POSITIVE_IMAGES,2));
+    IMAGES.push(jsPsych.randomization.repeat(NEGATIVE_IMAGES,2));
+    IMAGES = IMAGES.flat();
+    app = jsPsych.randomization.repeat(POSITIVE_DECISIONS,2);
+    avo = jsPsych.randomization.repeat(NEGATIVE_DECISIONS,2);
+    DECISIONS.push(app.slice(0,24));
+    DECISIONS.push(avo.slice(0,24));
+    DECISIONS.push(app.slice(24,48));
+    DECISIONS.push(avo.slice(24,48));
+    DECISIONS = DECISIONS.flat();
+
+	// build trainning
+	
+	//should be 1 of each kind: positive approach, negative approach, positive avoidance, negative avoidance
+
+    var PRACTICE_IMAGES = [];
+    var PRACTICE_DECISIONS = [];
+    var PRACTICE_app = [];
+    var PRACTICE_avo = [];
+    PRACTICE_IMAGES.push(jsPsych.randomization.shuffle(POS_PRACTICE_IMAGES).slice(0,2));
+    PRACTICE_IMAGES.push(jsPsych.randomization.shuffle(NEG_PRACTICE_IMAGES).slice(0,2));
+    PRACTICE_IMAGES = PRACTICE_IMAGES.flat();
+    PRACTICE_app.push(jsPsych.randomization.shuffle(PRACTICE_POS_DECISIONS).slice(0,2));
+    PRACTICE_avo.push(jsPsych.randomization.shuffle(PRACTICE_NEG_DECISIONS).slice(0,2));
+    // If I decide the next 4 lines are needed, check whether also needed in main exp trials
+    PRACTICE_app = PRACTICE_app.flat();
+    PRACTICE_avo = PRACTICE_avo.flat();
+    PRACTICE_app = jsPsych.randomization.shuffle(PRACTICE_app);
+    PRACTICE_avo = jsPsych.randomization.shuffle(PRACTICE_avo);
+    PRACTICE_DECISIONS.push(PRACTICE_app.slice(0,1));
+    PRACTICE_DECISIONS.push(PRACTICE_avo.slice(0,1));
+    PRACTICE_DECISIONS.push(PRACTICE_app.slice(1,2));
+    PRACTICE_DECISIONS.push(PRACTICE_avo.slice(1,2));
+    PRACTICE_DECISIONS = PRACTICE_DECISIONS.flat();
+
+
+  //Load images
+  var IMAGES_TO_LOAD = [];
+
+  const numOfStims = FAST_MODE ? 5 : DECISIONS.length;
+  var trial_stims = [];
+  for (i=0;i< numOfStims;i++) {
+    trial_stims.push([DECISIONS[i],IMAGES[i]]);
+    IMAGES_TO_LOAD.push(IMG_PREF+IMAGES[i]+IMG_SUFF);
+  }
+  trial_stims = jsPsych.randomization.shuffle(trial_stims);
+  
+  const PRACTICE_numOfStims = PRACTICE_DECISIONS.length;
+  var PRACTICE_trial_stims = [];
+  for (i=0;i<PRACTICE_numOfStims;i++) {
+    PRACTICE_trial_stims.push([PRACTICE_DECISIONS[i],PRACTICE_IMAGES[i]]);
+    IMAGES_TO_LOAD.push(IMG_PREF + PRACTICE_IMAGES[i] + IMG_SUFF);
+  }
+  PRACTICE_trial_stims = jsPsych.randomization.shuffle(PRACTICE_trial_stims);
+
+  //Request text for when the user hasn't answered an important question
+  const answerRequest = '<span style="color: red;">Are you sure you don\'t want to answer this question?</span><br>';
+
+
+  const SEND_BUTTON = 'Send';
+
+  var xhrs = [];
+  //Save the data once the experiment is over
+  function saveData(name, data){
+    data = data.replace(/<br>/g, '');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'write_data.php'); // 'write_data.php' is the path to the php file described above.
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({filename: name, filedata: data}));
+    xhrs.push(xhr);
+  }
+
+
+
+
+  var pressSpace = {
+    type: 'html-keyboard-response',
+    stimulus:  'Press the space bar to continue',
+    choices: ['space'],
+    data: {test_part: 'instructions'}
+  }
+
+
+  var exitFullScreen = {
+    type: 'fullscreen',
+    message: '',
+    delay_after: 0,
+    fullscreen_mode: false,
+    on_finish: function(data) {
+      jsPsych.endExperiment("Thank you for your response");
+    }
+  }
+
+  var exitFullScreen2 = {
+    type: 'fullscreen',
+    message: '',
+    delay_after: 0,
+    fullscreen_mode: false,
+    on_finish: function(data) {
+      jsPsych.endExperiment("\n" +
+              "    Thank you for participating in our study.<br><br><br>If you are a Prolific participant, " +
+              "    please press <a href=\"https://app.prolific.ac/submissions/complete?cc=LLEZMDOY\" target=\"_blank\">HERE</a><br>");
+    }
+  }
+
+  //Switch to full screen
+  var Welcome = {
+    type: 'html-keyboard-response',
+    stimulus: "<p style='word-wrap: break-word; margin-left:100px;" +
+            "        margin-right:100px; font-size: 22px; text-align:center;'>" +
+            "        Welcome!<br><br>In this study you will complete a decision making task.<br>" +
+            "        <br>On the next page you will be presented with a general consent form before continuing on to the study.<br><br>" +
+            "Press the space bar to continue.",
+    choices: ['space'],
+    data: {button_pressed: ''},
+    //on_finish: function() {
+    //  jsPsych.data.addProperties({Valence: VALENCE, Conflict: CONFLICT});
+    //}
+  };
+
+  var fullscreenmessage = {
+    type: 'fullscreen',
+    fullscreen_mode: true,
+    message: '<p>The experiment will switch to full screen mode when you press the button below and will continue from the same point</p>'
+  };
+
+  var fullscreenStart = {
+    type: 'fullscreen',
+    fullscreen_mode: true,
+    message: '<p>The experiment will switch to full screen mode when you press the button below</p>'
+  };
+
+  var requestFullScreen = {
+    type: 'html-button-response',
+    stimulus: 'The experiment is best in full screen mode, would you agree to switch to full screen?',
+    choices: ['Yes', 'No']
+  };
+
+  var checkFSConsent = {
+    timeline: [fullscreenmessage],
+    conditional_function: function(){
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      jsonData = JSON.parse(jsonData);
+      var responses = JSON.parse(jsonData[0].button_pressed);
+      if (responses == 0) {
+        return true;
+      }
+      return false;
+    }
+  };
+
+  requestedFullScreen = false;
+
+  var isFullScreen = {
+    timeline: [requestFullScreen, checkFSConsent],
+    conditional_function: function(){
+      if(!(
+              document.fullscreenElement ||
+              document.webkitFullscreenElement ||
+              document.mozFullScreenElement ||
+              document.msFullscreenElement
+      ) && !requestedFullScreen) {
+        requestedFullScreen = true;
+        return true;
+      }
+      return false;
+    }
+  };
+
+
+  //Trial html
+  var generateTrialHtml = function (l,r) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 768 576" style="max-width: 610px; width:95%; max-height: 95vh; margin: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">' +
+            '    <rect height="576" width="768" style="height: 576px; width: 768px; fill: rgb(255,255,255); stroke-width:3px;stroke:rgb(0,0,0)"></rect>' +
+            '    <foreignObject x="0"  y="120" width="768px" height="100">' +
+            '        <div style="text-align: center; font-size: 50px; font-style: italic; margin-top: 5px;"><b>Decidee</b></div>' +
+            '    </foreignObject>' +
+            '    <foreignObject x="0" y="246" width="768px" height="300">' +
+            '        <div>' +
+            '            <div style="float: left; font-size: 40px; margin-left: 5%;margin-top: 5px;"><span>'+l+'</span></div>' +
+            '            <div style="float: right; font-size: 40px; margin-right: 5%;margin-top: 5px;">'+r+'</div>' +
+            '        </div>' +
+            '    </foreignObject>' +
+            '    <foreignObject y="220" x="0" height="300" width="768">' +
+            '        <div style="font-size:30px; text-align: center;"><b>or</b></div>' +
+            '    </foreignObject>' +
+            '    <foreignObject y="390" x="0" height="300" width="768">' +
+            '        <div>' +
+            '            <div style="float: left; font-size: 20px; margin-left: 5%;">D</div>' +
+            '            <div style="float: right; font-size: 20px; margin-right: 5%;">L</div>' +
+            '        </div>' +
+            '    </foreignObject>' +
+            '</svg>';
+  };
+
+  //slides
+  var instructionPages = [
+    '<div style="display: flex; flex-direction: column; justify-content: center;"><div>Please read the following instructions carefully.' +
+    '<br><br>' +
+    'In this study we are interested in how people make decisions in different contexts. <br>During each trial of the study, you will be presented with two options, and asked to make a decision using the D and L keys. For example:<br><br>' +
+    '</div>' +
+    '<div style="text-align: center; flex-grow: 1;">' +
+    '<svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 768 576" style="max-width: 400px; width:95%; max-height: 95vh; margin: auto;">' +
+    '    <rect height="576" width="768" style="height: 576px; width: 768px; fill: rgb(255,255,255); stroke-width:7px;stroke:rgb(0,0,0)"></rect>' +
+    '    <foreignObject x="0"  y="120" width="768px" height="100">' +
+    '        <div style="text-align: center; font-size: 50px; font-style: italic; margin-top: 5px;"><b>Decide</b></div>' +
+    '    </foreignObject>' +
+    '    <foreignObject x="0" y="246" width="768px" height="300">' +
+    '        <div>' +
+    '            <div style="float: left; font-size: 40px; margin-left: 5%;margin-top: 5px;"><span>'+PRACTICE_DECISIONS[0][0]+'</span></div>' +
+    '            <div style="float: right; font-size: 40px; margin-right: 5%;margin-top: 5px;">'+PRACTICE_DECISIONS[0][1]+'</div>' +
+    '        </div>' +
+    '    </foreignObject>' +
+    '    <foreignObject y="228" x="0" height="300" width="768">' +
+    '        <div style="font-size:30px; text-align: center;"><b>or</b></div>' +
+    '    </foreignObject>' +
+    '    <foreignObject y="390" x="0" height="300" width="768">' +
+    '        <div>' +
+    '            <div style="float: left; font-size: 20px; margin-left: 5%;">D</div>' +
+    '            <div style="float: right; font-size: 20px; margin-right: 5%;">L</div>' +
+    '        </div>' +
+    '    </foreignObject>' +
+    '</svg>' +
+    '</div>' +
+    '<p style="position: relative; margin-top: 5px">' +
+    '</p>' +
+    'Please press the space bar to continue reading the instructions.' +
+    '</div>'];
+
+  var instructions = {
+    type: 'instructions',
+    key_forward: 'space',
+    pages: instructionPages,
+    data: {test_part: 'instructions'}
+  };
+
+  var lastInstrucion = {
+    type: 'html-keyboard-response',
+    stimulus:  'We are interested in examining how people make decisions in different contexts, so before each decision an image depicting a scene, an object, or an event will appear briefly on the screen.<br><br>' +
+            'A sequence of a trial will look as follows: <span style="line-height: 2"><br>(1) An <span size=6><b>*</b></span> sign will briefly appear at the center of the screen.<br>(2) Shortly after, an image will appear.<br>(3) Then, the decision will appear inside a rectangle.</span><br><br>' +
+            ' There is no need to respond to the image, just to the decision that follows it. <br><br>' +
+            'Please note there are no right or wrong answers, so please decide according to your preferences.<br>' +
+            '<br>' +
+            //'Be sure that your decision is the one that you would actually make if you really had to decide.<br>' +
+            //'<br>' +
+            'Pay no attention to the timing. Take as little or as much time as you need with each decision.<br>' +
+            '<br>' +
+            'Before you begin the actual task, you will do a few practice decisions.<br><b>Please place your left hand index finger on the D key and your right hand index finger on the L key, and press one of them to do a few practice decisions.</b><br>',
+    choices: ['d', 'l'],
+    data: {test_part: 'instructions'}
+  };
+
+
+  var blockInstructions = {
+    type: 'html-keyboard-response',
+    stimulus: 'You are now ready to begin the task.<br><br>' +
+            'Place your left hand index finger on the <b>D key</b> and your right hand<br>' +
+            'index finger on the <b>L key</b> and press one of them to begin.',
+    choices: ['d', 'l'],
+    data: {test_part: instructions}
+  };
+
+
+  //Generate the image part of the trial
+  var generateTrialImg = function (i) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 768 576" style="max-width: 610px; width:95%; max-height: 95vh; margin: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">' +
+            '    <image x="0" y="0" width="768" height="576" xlink:href="' +IMG_PREF+i+IMG_SUFF +  '" />' +
+            '    <rect height="576" width="768" style="height: 576px; width: 768px; fill: rgb(255,255,255); stroke-width:3px;stroke:rgb(0,0,0);fill-opacity: 0.0"></rect>' +
+
+            '</svg>';
+  };
+
+
+  //Fixation slide
+  var fixation = {
+    type: 'html-keyboard-response',
+    stimulus: '<svg viewBox="0 0 768 576" style="max-width: 768px; width:95%; max-height: 95vh; margin: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">' +
+            '    <text x="349" y="357" fill="black" style="font-size: 140px;">*</text>' +
+            '</svg>',
+    choices: jsPsych.NO_KEYS,
+    trial_duration: 750,
+    post_trial_gap: 500,
+    data: {test_part: 'fixation'}
+  }
+
+
+  //Practice vars
+    var practice_index = 0;
+    var practiceChars = [];
+    var PRACTICE_singleTrial = {
+        type: 'html-keyboard-response',
+        stimulus: function () {
+            practiceChars = PRACTICE_trial_stims[practice_index][0];
+            practiceChars = jsPsych.randomization.shuffle(practiceChars);
+            return generateTrialHtml(practiceChars[0], practiceChars[1]);
+            },
+        choices: ['d', 'l'],
+        post_trial_gap: 1000,
+        data: function() {
+            return {test_part: 'trial', trial_num: practice_index, Valence: isImgPosPractice(PRACTICE_trial_stims[practice_index][1]),Conflict: isConflictAppPractice(PRACTICE_trial_stims[practice_index][0]),Left_option: practiceChars[0], Right_option: practiceChars[1], Image: PRACTICE_trial_stims[practice_index][1]
+            };
+        },
+        on_finish: function () {
+            practice_index++;
+            saveData('$'+subjectID, jsPsych.data.get().csv());
+        }
+    };
+
+  var PRACTICE_img_stim = {
+    type: 'html-keyboard-response',
+    choices: jsPsych.NO_KEYS,
+    stimulus: function () {
+      return generateTrialImg(PRACTICE_trial_stims[practice_index][1]);
+    },
+    trial_duration: 2000,
+    post_trial_gap: 750,
+    data: function() {
+      return {test_part: 'image', trial_num: practice_index, Valence: isImgPosPractice(PRACTICE_trial_stims[practice_index][1]), Image: PRACTICE_trial_stims[practice_index][1]};
+    },
+  };
+  
+    var practiceTrial = {
+        timeline: [isFullScreen,fixation,PRACTICE_img_stim,PRACTICE_singleTrial]
+    };
+
+  var runPractice = {
+    timeline: [practiceTrial],
+    loop_function: function() {
+      if (practice_index < PRACTICE_trial_stims.length) { return true; }
+      return false;
+    }
+  };
+
+  //var practiceImg = {
+    //type: 'html-keyboard-response',
+    //choices: jsPsych.NO_KEYS,
+    //stimulus: function () {
+    //  return generateTrialImg(PRACTICE_IMAGES[practice_index]);
+    //},
+    //trial_duration: 2000,
+    //post_trial_gap: 750,
+    //data: {test_part: 'practice'}
+  //};
+
+  //var practiceTrial = {
+    //type: 'html-keyboard-response',
+    //stimulus: function () {
+      //trialChars = PRACTICE_DECISIONS[practice_index];
+      //return generateTrialHtml(trialChars[0], trialChars[1]);
+    //},
+    //choices: ['d', 'l'],
+    //data: {test_part: 'practice'},
+    //post_trial_gap: 1000,
+    //on_finish: function () {
+      //practice_index++;
+      //saveData('$'+subjectID, jsPsych.data.get().csv());
+    //}
+  //}
+
+  //var practiceTrials = {
+  //  timeline: [isFullScreen, fixation, practiceImg, practiceTrial,
+  //    isFullScreen, fixation, practiceImg, practiceTrial,
+  //    isFullScreen, fixation, practiceImg, practiceTrial,
+  //    isFullScreen, fixation, practiceImg, practiceTrial]
+  //};
+
+
+    //Exp trials
+  var trial_index = 0;
+  var trialChars = [];
+  var singleTrial = {
+    type: 'html-keyboard-response',
+    stimulus: function () {
+      trialChars = trial_stims[trial_index][0];
+      trialChars = jsPsych.randomization.shuffle(trialChars);
+      return generateTrialHtml(trialChars[0], trialChars[1]);
+
+    },
+    choices: ['d', 'l'],
+    post_trial_gap: 1000,
+    data: function() {
+      return {test_part: 'trial', trial_num: trial_index, Valence: isImgPosExp(trial_stims[trial_index][1]),Conflict: isConflictAppExp(trial_stims[trial_index][0]),Left_option: trialChars[0], Right_option: trialChars[1],
+        Image: trial_stims[trial_index][1]};
+    },
+    on_finish: function () {
+      trial_index++;
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+  var img_stim = {
+    type: 'html-keyboard-response',
+    choices: jsPsych.NO_KEYS,
+    stimulus: function () {
+      return generateTrialImg(trial_stims[trial_index][1]);
+    },
+    trial_duration: 2000,
+    post_trial_gap: 750,
+    data: function() {
+      return {test_part: 'image', trial_num: trial_index, Valence: isImgPosExp(trial_stims[trial_index][1]), Image: trial_stims[trial_index][1]};
+    },
+  };
+
+
+  var blockTrial = {
+    timeline: [isFullScreen,fixation,img_stim,singleTrial]
+  };
+
+  var runBlocks = {
+    timeline: [blockTrial],
+    loop_function: function() {
+      if (trial_index < trial_stims.length) { return true; }
+      return false;
+    }
+  };
+
+
+
+  //Check user's consent at the beginning
+  var consent = {
+    type: 'survey-multi-choice',
+    questions: [{prompt: "I agree to participate", options: ['Yes', 'No'], required: true, horizontal: true}],
+    preamble: '<p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px;\'>' +
+            '<br> In this study, we are interested in how people make decisions.' +
+            ' <br><br>If you agree to participate, you will be asked to complete a computerized decision making task. All responses will remain anonymous.' +
+            '<br><br> <b>Please note that during the study you may be presented with images that you may find unpleasant (e.g., distressing or sad).</b>' +
+            '<br><br>Taking part in this study is voluntary. If you withdraw at any time, you will ' +
+            'receive no monetary compensation, otherwise you will receive the amount specified in ' +
+            'the description of the study.<br><br>If there is anything about the study or ' +
+            'taking part in it that is unclear or that you do not understand, please contact ' +
+            'the researcher of this study through a message in the Prolific messaging system.<br><br></p>',
+    data: {test_part: 'consent'}
+  };
+
+  var noConsentGiven = {
+    type: 'html-keyboard-response',
+    choices: ['space'],
+    stimulus: "Thank you for your response.<br><br>Press the space bar to exit.",
+    data: {test_part: 'noConsent'}
+  };
+
+
+
+  var checkConsent = {
+    timeline: [noConsentGiven, exitFullScreen],
+    conditional_function: function(){
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      var code = responses.Q0;
+      if (code == "No") {
+        return true;
+      }
+      return false;
+    }
+  };
+
+
+  //Debriefing at the end
+  var debriefing = {
+    type: 'html-keyboard-response',
+    choices: ['space'],
+    stimulus: "Thank you for completing the study.<br><br>In this study, we were interested in examining whether" +
+            "    it is easier to make a decision between two positive options or two negative options, when presented with positive or negative images. According to the condition you were assigned to, you only made decisions between positive or negative options and saw only positive or negative images.<br><br>" +
+            "    During this study, you were briefly presented with various images, some of which" +
+            "    may have been unpleasant." +
+            " If you or someone you know is in emotional distress," +
+            "    you can contact a psychological service: <br>" +
+            "    In Britain: https://www.nhs.uk/using-the-nhs/nhs-services/mental-health-services/dealing-with-a-mental-health-crisis-or-emergency/" +
+            "<br>" +
+            "    In the US: https://www.mentalhealth.gov/get-help/immediate-help" +
+            "    <br><br>" +
+            "    If you have any questions about the study, please contact the researcher of this study" +
+            "    via the messaging system." +
+            "    <br><br>Press the space bar to continue.",
+    data: {test_part: 'debriefing'},
+    on_start: function(data) {
+      saveData(subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+
+  //Surveys
+  const genderOptions = ["Male", "Female", "Other"];
+  var genderSurvey = {
+    type: 'survey-multi-choice',
+    questions: [{prompt:'What is your gender?',
+      options: genderOptions, horizontal: false,recommended: answerRequest,}],
+    button_label: SEND_BUTTON,
+    data: {test_part: 'gender'},
+    on_finish: function(data) {
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      var code = responses.Q0;
+      jsPsych.data.addProperties({Gender: code});
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+
+  };
+
+
+  var getProlific = {
+    type: 'survey-text',
+    questions:[{prompt: 'Please enter your Prolific ID:', required: true}],
+    data: function() {return{test_part: 'prolific', user_agent: navigator.userAgent}},
+    on_finish: function(){
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      var code = responses.Q0;
+      jsPsych.data.addProperties({ProlificID: code});
+      subjectID = code;
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+
+  var getAge = {
+    type: 'survey-text',
+    questions: [{prompt: 'How old are you?', recommended: answerRequest}],
+    data: {test_part: 'age'},
+    on_finish: function(){
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      var code = responses.Q0;
+      jsPsych.data.addProperties({Age: code});
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+
+  var difficultyCheck = {
+    type: 'survey-multi-choice',
+    questions: [{prompt: 'On average, how difficult was it for you to decide between the options?<br> <b>1 (not at all) to 7 (very much)</b>',recommended: answerRequest,
+      options:['<br>1','<br>2', '<br>3','<br>4','<br>5','<br>6','<br>7'], horizontal: true}],
+    data: {test_part: 'difficulty'},
+    on_finish: function(){
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      var code = responses.Q0;
+      jsPsych.data.addProperties({difficulty: code});
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+
+
+  var moodCheck = {
+    type: 'survey-multi-choice',
+    questions: [{prompt: 'How positive do you feel right now? <br><b>1 (not at all) to 9 (very much)</b>',recommended: answerRequest,
+      options:['<br>1','<br>2', '<br>3','<br>4','<br>5','<br>6','<br>7','<br>8','<br>9'], horizontal: true},
+      {prompt: 'How negative do you feel right now? <br><b>1 (not at all) to 9 (very much)</b>',recommended: answerRequest,
+        options:['<br>1','<br>2', '<br>3','<br>4','<br>5','<br>6','<br>7','<br>8','<br>9'], horizontal: true}],
+    data: {test_part: 'moodCheck'},
+    on_finish: function() {
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      jsPsych.data.addProperties({moodCheckPos: responses.Q0, moodCheckNeg: responses.Q1});
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+
+  var attentionCheck2 = {
+    type: 'survey-multi-choice-text',
+    questions: [{prompt: 'People vary in the amount they pay attention to these kinds of surveys.' +
+              ' Some take them seriously and read each question, whereas others go very quickly and' +
+              ' barely read the questions at all. If you have read this question carefully,' +
+              'please write the word yes in the blank box below labeled other.' +
+              ' There is no need for you to respond to the scale below.',options:[1,2,3,4,5,6,7], horizontal: false}],
+    text_questions: [{prompt: 'Other', value:'', columns: 60, rows: 6}],
+    data: {test_part: 'attentionCheck2'},
+    on_finish: function() {
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      jsPsych.data.addProperties({attCheck2Choice: responses.Q0, attCheck2Text: responses.T0});
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+  var attentionCheck = {
+    type: 'survey-multi-choice',
+    questions: [{prompt: 'In this study, you were asked:',options:[
+        'To decide between options', 'To estimate the number of miles between cities',
+        'To rate your liking of different snacks', 'I do not remember'
+      ], horizontal: false}],
+    data: {test_part: 'attentionCheck1'},
+    on_finish: function(){
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      var code = responses.Q0;
+      jsPsych.data.addProperties({attentionCheck: code});
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+  var botCheck = {
+    type: 'survey-text',
+
+    questions: [{prompt: 'Do you have any food allergies or any food intolerance?', rows: 6, columns: 60}],
+    data: {test_part: 'foodAllergies'},
+    on_finish: function(){
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      var code = responses.Q0;
+      jsPsych.data.addProperties({foodAllergies: code});
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+  var comments = {
+    type: 'survey-text',
+    questions: [{prompt: 'General comments (optional)', rows: 6, columns: 50}],
+    data: {test_part: 'comments'},
+    on_finish: function(){
+      var data = jsPsych.data.getLastTrialData();
+      var jsonData = data.json();
+      //alert(jsonData);
+      jsonData = JSON.parse(jsonData)
+      var responses = JSON.parse(jsonData[0].responses);
+      var code = responses.Q0;
+      jsPsych.data.addProperties({comments: code});
+      saveData('$'+subjectID, jsPsych.data.get().csv());
+    }
+  };
+
+
+
+  var sendDataTrial = {
+    type: 'send-data',
+    content: function() {return jsPsych.data.get().csv()} ,
+    fileName: function() {return subjectID},
+    target: 'write_data.php',
+    on_start: function() {
+      for (var i=0;i<xhrs.length;i++) {
+        if (xhrs[i].readyState!=4) {
+          xhrs[i].abort;
+        }
+      }
+    }
+  };
+
+
+  var timeline = [];
+  timeline.push(Welcome, consent, checkConsent, getProlific, fullscreenStart);
+  timeline.push(instructions, lastInstrucion, runPractice, blockInstructions, runBlocks, pressSpace);
+  //timeline.push(difficultyCheck, moodCheck, botCheck);
+  //timeline.push(botCheck);
+  timeline.push(attentionCheck, attentionCheck2);
+  timeline.push(genderSurvey);
+  timeline.push(getAge, comments, sendDataTrial);
+  timeline.push(debriefing, exitFullScreen2);
+  // ----------------- init ----------------- //
+  jsPsych.init({
+    timeline: timeline,
+    preload_images: IMAGES_TO_LOAD
+  });
+
+</script>
+</html>
